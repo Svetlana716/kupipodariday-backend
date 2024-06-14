@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -58,6 +59,7 @@ export class WishesService {
   }
 
   async update(userId: number, wishId: number, updateWishDto: UpdateWishDto) {
+    const { price } = updateWishDto;
     const owner = await this.usersService.findUser({ where: { id: userId } });
     const wish = await this.findWish(wishId);
 
@@ -67,6 +69,12 @@ export class WishesService {
       );
 
     if (!wish) throw new NotFoundException('Подарок не найден');
+
+    if (wish.offers.length > 0 && price) {
+      throw new BadRequestException(
+        'нельзя изменять стоимость подарка, если уже есть желающие скинуться',
+      );
+    }
 
     return await this.wishRepository.save({ ...wish, ...updateWishDto });
   }

@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { FindOneOptions, Like, Repository } from 'typeorm';
 import { hashValue } from 'src/helpers/hash';
 import { isUserExist } from 'src/helpers/isUserExist';
+import { Wish } from 'src/wishes/entities/wish.entity';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +25,19 @@ export class UsersService {
       password: await hashValue(password),
     });
     return this.userRepository.save(user);
+  }
+
+  async findMeWishes(userId: number): Promise<Wish[]> {
+    const owner = await this.findUser({
+      where: { id: userId },
+      relations: {
+        wishes: {
+          owner: true,
+          offers: true,
+        },
+      },
+    });
+    return owner?.wishes || [];
   }
 
   async findAll(query: string): Promise<User[]> {

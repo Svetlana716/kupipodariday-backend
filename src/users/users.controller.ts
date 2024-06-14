@@ -45,11 +45,7 @@ export class UsersController {
 
   @Get('me/wishes')
   async findMyWishes(@AuthUser() user: User): Promise<Wish[]> {
-    const owner = await this.usersService.findUser({
-      where: { id: user.id },
-      relations: { wishes: true },
-    });
-    return owner?.wishes || [];
+    return await this.usersService.findMeWishes(user.id);
   }
 
   @Get(':username/wishes')
