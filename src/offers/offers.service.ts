@@ -5,6 +5,12 @@ import { Offer } from './entities/offer.entity';
 import { Repository } from 'typeorm';
 import { UsersService } from 'src/users/users.service';
 import { WishesService } from 'src/wishes/wishes.service';
+import {
+  userSelectOptions,
+  offerSelectOptions,
+  wishSelectOptions,
+  relations,
+} from 'src/helpers/constants';
 
 @Injectable()
 export class OffersService {
@@ -25,34 +31,47 @@ export class OffersService {
     if (owner.id === wish.owner.id)
       throw new BadRequestException('Нельзя поддержать свои подарки');
 
+    if (wish.raised === wish.price) {
+      throw new BadRequestException('Необходимая сумма собрана');
+    }
+
     if (raised > wish.price)
       throw new BadRequestException('Сумма заявки больше чем осталось собрать');
 
     await this.wishService.changeWish(itemId, { raised });
 
-    return this.offerRepository.save({
+    const offer = this.offerRepository.create({
       hidden,
       amount,
       user: owner,
       item: wish,
     });
-  }
 
-  /* async findOffer(query: FindOneOptions<Offer>) {
-    return this.offerRepository.findOneOrFail(query);
-  } */
+    return await this.offerRepository.save(offer);
+  }
 
   async findOffers(userId: number) {
     const owner = await this.usersService.findUser({
+      select: {
+        ...userSelectOptions,
+        offers: {
+          ...offerSelectOptions,
+          user: { ...userSelectOptions },
+          item: {
+            ...wishSelectOptions,
+            owner: { ...userSelectOptions },
+          },
+        },
+      },
       where: { id: userId },
       relations: {
         offers: {
-          item: {
-            owner: true,
-            offers: true,
-          },
-          user: true,
+          item: true,
+          ...relations,
         },
+      },
+      order: {
+        createdAt: 'DESC',
       },
     });
     return owner.offers || [];

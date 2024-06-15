@@ -7,6 +7,11 @@ import { FindOneOptions, Like, Repository } from 'typeorm';
 import { hashValue } from 'src/helpers/hash';
 import { isUserExist } from 'src/helpers/isUserExist';
 import { Wish } from 'src/wishes/entities/wish.entity';
+import {
+  userSelectOptions,
+  wishSelectOptions,
+  relations,
+} from 'src/helpers/constants';
 
 @Injectable()
 export class UsersService {
@@ -27,42 +32,26 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async findMeWishes(userId: number): Promise<Wish[]> {
-    const owner = await this.findUser({
-      where: { id: userId },
-      relations: {
-        wishes: {
-          owner: true,
-          offers: true,
-        },
-      },
-    });
-    return owner?.wishes || [];
-  }
-
-  async findAll(query: string): Promise<User[]> {
-    return await this.userRepository.find({
-      select: {
-        id: true,
-        username: true,
-        about: true,
-        avatar: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      where: [{ username: Like(`%${query}%`) }, { email: Like(`%${query}%`) }],
-    });
-  }
-
   async findUser(query: FindOneOptions<User>) {
     return await this.userRepository.findOneOrFail(query);
+  }
+
+  async findMe(userId: number): Promise<User> {
+    return await this.findUser({
+      select: {
+        email: true,
+        ...userSelectOptions,
+      },
+      where: { id: userId },
+    });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     const { email, username, password } = updateUserDto;
 
-    await isUserExist.apply(this, [email, username]);
+    if (email || username) {
+      await isUserExist.apply(this, [email, username]);
+    }
 
     const user = await this.findUser({ where: { id } });
 
@@ -70,5 +59,42 @@ export class UsersService {
       updateUserDto.password = await hashValue(password);
     }
     return await this.userRepository.save({ ...user, ...updateUserDto });
+  }
+
+  async findWishes(condition): Promise<Wish[]> {
+    const owner = await this.findUser({
+      select: {
+        ...userSelectOptions,
+        wishes: {
+          ...wishSelectOptions,
+          owner: { ...userSelectOptions },
+        },
+      },
+      where: condition,
+      relations: {
+        wishes: {
+          owner: true,
+          offers: relations,
+        },
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return owner?.wishes || [];
+  }
+
+  async findUserByUsername(name: string): Promise<User> {
+    return await this.findUser({
+      select: userSelectOptions,
+      where: [{ username: name }, { email: name }],
+    });
+  }
+
+  async findAll(query: string): Promise<User[]> {
+    return await this.userRepository.find({
+      select: userSelectOptions,
+      where: [{ username: Like(`%${query}%`) }, { email: Like(`%${query}%`) }],
+    });
   }
 }

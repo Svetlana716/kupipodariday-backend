@@ -36,10 +36,13 @@ export class Wishlistlist {
   @IsUrl()
   image: string;
 
-  @ManyToOne(() => User, user => user.wishlists)
-  @IsUrl()
+  @ManyToOne(() => User, user => user.wishlists, {
+    onDelete: 'CASCADE',
+  })
   owner: User;
 
-  @OneToMany(() => Wish, wish => wish.wishlist)
+  @OneToMany(() => Wish, wish => wish.wishlist, {
+    onDelete: 'CASCADE',
+  })
   items: Wish[];
 }

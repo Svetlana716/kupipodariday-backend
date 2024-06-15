@@ -62,12 +62,18 @@ export class User {
   @MinLength(8)
   password: string;
 
-  @OneToMany(() => Wish, wish => wish.owner)
+  @OneToMany(() => Wish, wish => wish.owner, {
+    onDelete: 'CASCADE',
+  })
   wishes: Wish[];
 
-  @OneToMany(() => Offer, offer => offer.user)
+  @OneToMany(() => Offer, offer => offer.user, {
+    onDelete: 'CASCADE',
+  })
   offers: Offer[];
 
-  @OneToMany(() => Wishlistlist, wishlistlist => wishlistlist.owner)
+  @OneToMany(() => Wishlistlist, wishlistlist => wishlistlist.owner, {
+    onDelete: 'CASCADE',
+  })
   wishlists: Wishlistlist[];
 }

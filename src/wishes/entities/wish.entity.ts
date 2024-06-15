@@ -51,15 +51,20 @@ export class Wish {
   @IsPositive()
   copied: number;
 
-  @ManyToOne(() => User, user => user.wishes)
+  @ManyToOne(() => User, user => user.wishes, {
+    onDelete: 'CASCADE',
+  })
   @IsUrl()
   owner: User;
 
-  @OneToMany(() => Offer, offer => offer.item)
+  @OneToMany(() => Offer, offer => offer.item, {
+    onDelete: 'CASCADE',
+  })
   @IsUrl()
   offers: Offer[];
 
-  @ManyToOne(() => Wishlistlist, wishlist => wishlist.items)
-  @IsUrl()
+  @ManyToOne(() => Wishlistlist, wishlist => wishlist.items, {
+    onDelete: 'CASCADE',
+  })
   wishlist: Wishlistlist;
 }

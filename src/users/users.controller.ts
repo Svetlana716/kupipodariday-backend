@@ -21,18 +21,7 @@ export class UsersController {
 
   @Get('me')
   async findOwn(@AuthUser() user: User): Promise<User> {
-    return await this.usersService.findUser({
-      select: {
-        id: true,
-        username: true,
-        about: true,
-        avatar: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      where: { id: user.id },
-    });
+    return await this.usersService.findMe(user.id);
   }
 
   @Patch('me')
@@ -45,46 +34,22 @@ export class UsersController {
 
   @Get('me/wishes')
   async findMyWishes(@AuthUser() user: User): Promise<Wish[]> {
-    return await this.usersService.findMeWishes(user.id);
+    return await this.usersService.findWishes({ id: user.id });
+  }
+
+  @Get(':username')
+  async findUser(@Param('username') name: string): Promise<User> {
+    return await this.usersService.findUserByUsername(name);
   }
 
   @Get(':username/wishes')
   async findUsersWishes(@Param('username') name: string): Promise<Wish[]> {
-    const user = await this.usersService.findUser({
-      select: {
-        id: true,
-        username: true,
-        about: true,
-        avatar: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      where: [{ username: name }, { email: name }],
-      relations: {
-        wishes: {
-          owner: true,
-          offers: true,
-        },
-      },
-    });
-    return user.wishes;
+    return await this.usersService.findWishes([
+      { username: name },
+      { email: name },
+    ]);
   }
-  @Get(':username')
-  async findUser(@Param('username') name: string): Promise<User> {
-    return await this.usersService.findUser({
-      select: {
-        id: true,
-        username: true,
-        about: true,
-        avatar: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      where: [{ username: name }, { email: name }],
-    });
-  }
+
   @Post('find')
   async find(@Body() body: { query: string }): Promise<User[]> {
     const { query } = body;

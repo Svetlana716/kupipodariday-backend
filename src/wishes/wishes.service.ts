@@ -10,6 +10,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Wish } from './entities/wish.entity';
 import { In, Repository } from 'typeorm';
 import { UsersService } from 'src/users/users.service';
+import {
+  userSelectOptions,
+  wishSelectOptions,
+  relations,
+} from 'src/helpers/constants';
 
 @Injectable()
 export class WishesService {
@@ -26,6 +31,14 @@ export class WishesService {
 
   async findLast(): Promise<Wish[]> {
     return await this.wishRepository.find({
+      select: {
+        ...wishSelectOptions,
+        owner: { ...userSelectOptions },
+      },
+      relations: {
+        owner: true,
+        offers: relations,
+      },
       order: {
         createdAt: 'DESC',
       },
@@ -35,6 +48,14 @@ export class WishesService {
 
   async findTop(): Promise<Wish[]> {
     return await this.wishRepository.find({
+      select: {
+        ...wishSelectOptions,
+        owner: { ...userSelectOptions },
+      },
+      relations: {
+        owner: true,
+        offers: relations,
+      },
       order: {
         copied: 'DESC',
       },
@@ -44,17 +65,15 @@ export class WishesService {
 
   async findWish(id: number): Promise<Wish> {
     return await this.wishRepository.findOne({
+      select: {
+        ...wishSelectOptions,
+        owner: { ...userSelectOptions },
+      },
       where: { id },
       relations: {
         owner: true,
-        offers: true,
+        offers: relations,
       },
-    });
-  }
-
-  async findWishes(id: number[]): Promise<Wish[]> {
-    return await this.wishRepository.findBy({
-      id: In(id),
     });
   }
 
@@ -88,23 +107,31 @@ export class WishesService {
     return this.wishRepository.delete(wishId);
   }
 
-  async changeWish(wishId: number, change) {
-    const wish = await this.findWish(wishId);
-
-    if (!wish) throw new NotFoundException('Подарок не найден');
-
-    return await this.wishRepository.save({ ...wish, change });
-  }
-
   async copy(userId: number, wishId: number) {
     const owner = await this.usersService.findUser({ where: { id: userId } });
     const wish = await this.findWish(wishId);
-    this.changeWish(wishId, { copied: wish.copied + 1 });
+
+    await this.changeWish(wishId, { copied: wish.copied + 1 });
+
     const copiedWish = await this.wishRepository.create({
       ...wish,
       owner,
       raised: 0,
     });
     return this.wishRepository.save(copiedWish);
+  }
+
+  async findWishes(id: number[]): Promise<Wish[]> {
+    return await this.wishRepository.findBy({
+      id: In(id),
+    });
+  }
+
+  async changeWish(wishId: number, change) {
+    const wish = await this.findWish(wishId);
+
+    if (!wish) throw new NotFoundException('Подарок не найден');
+
+    return await this.wishRepository.update(wishId, change);
   }
 }

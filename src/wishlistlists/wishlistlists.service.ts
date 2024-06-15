@@ -10,6 +10,11 @@ import { Wishlistlist } from './entities/wishlistlists.entity';
 import { Repository } from 'typeorm';
 import { UsersService } from 'src/users/users.service';
 import { WishesService } from 'src/wishes/wishes.service';
+import {
+  userSelectOptions,
+  wishSelectOptions,
+  wishlistlistSelectOptions,
+} from 'src/helpers/constants';
 
 @Injectable()
 export class WishlistlistsService {
@@ -23,15 +28,19 @@ export class WishlistlistsService {
   async findAll(): Promise<Wishlistlist[]> {
     return await this.wishlistlistRepository.find({
       select: {
-        id: true,
-        name: true,
-        image: true,
-        createdAt: true,
-        updatedAt: true,
+        ...wishlistlistSelectOptions,
+        owner: { ...userSelectOptions },
+        items: {
+          ...wishSelectOptions,
+          owner: { ...userSelectOptions },
+        },
       },
       relations: {
         items: true,
         owner: true,
+      },
+      order: {
+        createdAt: 'DESC',
       },
     });
   }
@@ -61,6 +70,14 @@ export class WishlistlistsService {
     if (!owner) throw new UnauthorizedException('Необхоодима авторизация');
 
     return await this.wishlistlistRepository.findOne({
+      select: {
+        ...wishlistlistSelectOptions,
+        owner: { ...userSelectOptions },
+        items: {
+          ...wishSelectOptions,
+          owner: { ...userSelectOptions },
+        },
+      },
       where: { id: wishlistlistId },
       relations: {
         owner: true,
