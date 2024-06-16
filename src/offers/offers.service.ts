@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Offer } from './entities/offer.entity';
@@ -29,14 +29,14 @@ export class OffersService {
     const raised = (wish.raised += amount);
 
     if (owner.id === wish.owner.id)
-      throw new BadRequestException('Нельзя поддержать свои подарки');
+      throw new ForbiddenException('Нельзя поддержать свои подарки');
 
     if (wish.raised === wish.price) {
-      throw new BadRequestException('Необходимая сумма собрана');
+      throw new ForbiddenException('Необходимая сумма собрана');
     }
 
     if (raised > wish.price)
-      throw new BadRequestException('Сумма заявки больше чем осталось собрать');
+      throw new ForbiddenException('Сумма заявки больше чем осталось собрать');
 
     await this.wishService.changeWish(itemId, { raised });
 

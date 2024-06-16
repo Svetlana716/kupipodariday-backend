@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -91,14 +92,15 @@ export class WishlistlistsService {
     wishlistlistId: number,
     updateWishlistlistDto: UpdateWishlistlistDto,
   ) {
-    const owner = await this.usersService.findUser({ where: { id: userId } });
     const wishlistlist = await this.findWishlistlist(userId, wishlistlistId);
-    if (!owner)
-      throw new UnauthorizedException(
-        'Редактировать можно только свой список  желаний',
-      );
 
     if (!wishlistlist) throw new NotFoundException('Список  желаний не найден');
+
+    if (wishlistlist.owner.id !== userId) {
+      throw new ForbiddenException(
+        'Вы не можете редактировать чужие списки подарков',
+      );
+    }
 
     const { itemsId, ...rest } = updateWishlistlistDto;
 
@@ -119,9 +121,13 @@ export class WishlistlistsService {
   }
 
   async remove(userId: number, wishlistlistId: number) {
-    const owner = await this.usersService.findUser({ where: { id: userId } });
+    const wishlistlist = await this.findWishlistlist(userId, wishlistlistId);
 
-    if (!owner) throw new UnauthorizedException('Необхоодима авторизация');
+    if (wishlistlist.owner.id !== userId) {
+      throw new ForbiddenException(
+        'Вы не можете удалять чужие списки подарков',
+      );
+    }
 
     return this.wishlistlistRepository.delete(wishlistlistId);
   }

@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -90,7 +90,7 @@ export class WishesService {
     if (!wish) throw new NotFoundException('Подарок не найден');
 
     if (wish.offers.length > 0 && price) {
-      throw new BadRequestException(
+      throw new ForbiddenException(
         'нельзя изменять стоимость подарка, если уже есть желающие скинуться',
       );
     }
@@ -110,6 +110,12 @@ export class WishesService {
   async copy(userId: number, wishId: number) {
     const owner = await this.usersService.findUser({ where: { id: userId } });
     const wish = await this.findWish(wishId);
+
+    if (!wish) throw new NotFoundException('Подарок не найден');
+
+    if (owner.id === wish.owner.id) {
+      throw new ForbiddenException('Вы уже копировали себе этот подарок');
+    }
 
     await this.changeWish(wishId, { copied: wish.copied + 1 });
 
